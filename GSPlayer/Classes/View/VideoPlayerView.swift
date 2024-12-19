@@ -73,6 +73,10 @@ open class VideoPlayerView: UIView {
     /// Playback status changes, such as from play to pause.
     open var stateDidChanged: ((State) -> Void)?
     
+    open var positionDidChangd: ((Double) -> Void)?
+
+    open var bufferPositionDidChangd: ((Double) -> Void)?
+
     /// Replay after playing to the end.
     open var replay: (() -> Void)?
     
@@ -363,6 +367,7 @@ private extension VideoPlayerView {
             playerBufferingObservation = nil
             playerItemStatusObservation = nil
             playerItemKeepUpObservation = nil
+            removeTimeObserver(self)
             return
         }
         
@@ -370,6 +375,8 @@ private extension VideoPlayerView {
             if case .paused = self.state, self.pausedReason != .hidden {
                 self.state = .paused(playProgress: self.playProgress, bufferProgress: self.bufferProgress)
             }
+            
+            self.bufferPositionDidChangd?(item.currentBufferDuration)
             
             if self.bufferProgress >= 0.99 || (self.currentBufferDuration - self.currentDuration) > 3 {
                 VideoPreloadManager.shared.start()
@@ -391,6 +398,11 @@ private extension VideoPlayerView {
                 }
             }
         }
+        
+        addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 2)) {[weak self] time in
+            self?.positionDidChangd?(time.seconds)
+        }
+
     }
     
     @objc func playerItemDidReachEnd(notification: Notification) {
