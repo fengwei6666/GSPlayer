@@ -133,7 +133,8 @@ open class VideoPlayerView: UIView {
     private var playerItemStatusObservation: NSKeyValueObservation?
     private var playerLayerReadyForDisplayObservation: NSKeyValueObservation?
     private var playerTimeControlStatusObservation: NSKeyValueObservation?
-    
+    private var periodicTimeObserver: Any?
+
     // MARK: - Lifecycle
     
     open override var contentMode: UIView.ContentMode {
@@ -367,7 +368,9 @@ private extension VideoPlayerView {
             playerBufferingObservation = nil
             playerItemStatusObservation = nil
             playerItemKeepUpObservation = nil
-            removeTimeObserver(self)
+            if let periodicTimeObserver = periodicTimeObserver {
+                removeTimeObserver(periodicTimeObserver)
+            }            
             return
         }
         
@@ -399,7 +402,7 @@ private extension VideoPlayerView {
             }
         }
         
-        addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 2)) {[weak self] time in
+        periodicTimeObserver = addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 2)) {[weak self] time in
             self?.positionDidChangd?(time.seconds)
         }
 
